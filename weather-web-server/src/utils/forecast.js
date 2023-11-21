@@ -19,7 +19,11 @@ const forecast = (latidude, longitude, callback) => {
   
     const data = body.current
     
-    callback(undefined, `${data.weather_descriptions[0]}. It is currently ${data.temperature} degress out. It feels like ${data.feelslike} degress.`)
+    callback(undefined, 
+      `${data.weather_descriptions[0]}. It is currently ${data.temperature} degress out. 
+      It feels like ${data.feelslike} degress. 
+      The humitidy is ${data.humidity}%.`,
+    )
   })
 }
 
