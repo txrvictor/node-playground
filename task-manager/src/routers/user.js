@@ -1,77 +1,100 @@
 const express = require('express')
 const User = require('../models/user')
-
+const auth = require('../middleware/auth')
 const router = new express.Router()
 
 router.post('/users', async (req, res) => {
   const user = new User(req.body)
   try {
     await user.save()
-    res.status(201).send(user) // 201: created
+
+    // create a token for the newly generated user
+    const token = await user.generateAuthToken()
+
+    res.status(201).send({user, token}) // 201: created
   } catch (err) {
     res.status(400).send(err) // 400: client request error
   }
 })
 
-router.get('/users', async (_, res) => {
+router.post('/users/login', async (req, res) => {
+  const {email, password} = req.body
   try {
-    const users = await User.find({})
-    res.send(users)
+    const user = await User.findByCredentials(email, password)
+    const token = await user.generateAuthToken()
+    
+    res.send({user, token})
   } catch (err) {
-    res.status(500).send(err) // server error
+    res.status(400).send(err)
   }
 })
 
-router.get('/users/:id', async (req, res) => {
-  const userId = req.params.id
+// -- Authenticated routes
+
+router.post('/users/logout', auth, async (req, res) => {
   try {
-     // no need to convert _id to object with mongoose
-    const user = await User.findById(userId)
-    if (!user) {
-      res.status(404).send() // 404: not found
-      return
-    }
-    res.send(user)
+    const user = req.user
+    const currentToken = req.token
+
+    // filter out the token being used
+    user.tokens = user.tokens.filter((t) => {
+      return t.token !== currentToken
+    })
+
+    await user.save()
+
+    res.send()
   } catch (err) {
-    res.status(500).send(err)
+    res.status(500).send()
   }
 })
 
-router.patch('/users/:id', async (req, res) => {
-  const userId = req.params.id
-  const updates = req.body
+router.post('/users/logoutAll', auth, async (req, res) => {
+  try {
+    const user = req.user
+    user.tokens = [] // clean all tokens
+    await user.save()
+
+    res.send()
+  } catch (err) {
+    res.status(500).send()
+  }
+})
+
+router.get('/users/me', auth, async (req, res) => {
+  // send own user's profile
+  res.send(req.user)
+})
+
+router.patch('/users/me', auth, async (req, res) => {
+  const user = req.user
+
+  const updates = Object.keys(req.body)
   const allowedUpdates = ['name', 'email', 'password', 'age']
 
   // check if client sent some update which is not allowed
-  if (!Object.keys(updates).every((u) => allowedUpdates.includes(u))) {
+  if (!updates.every((u) => allowedUpdates.includes(u))) {
     res.status(400).send({error: `Invalid param, can only update: ${allowedUpdates.join(', ')}`})
     return
   }
 
   try {
-    const user = await User.findByIdAndUpdate(userId, updates, {
-      new: true, // returns the new user -after- the update
-      runValidators: true,
-    })
+    updates.forEach((update) => user[update] = req.body[update])
+    await user.save()
 
-    if (!user) {
-      res.status(404).send()
-      return
-    }
     res.send(user)
   } catch (err) {
     res.status(400).send(err)
   }
 })
 
-router.delete('/users/:id', async (req, res) => {
-  const userId = req.params.id
+router.delete('/users/me', auth, async (req, res) => {
+  const user = req.user
+
   try {
-    const user = await User.findByIdAndDelete(userId)
-    if (!user) {
-      res.status(404).send()
-      return
-    }
+    await user.remove()
+
+    // send back delete user
     res.send(user)
   } catch (err) {
     res.status(500).send(err)

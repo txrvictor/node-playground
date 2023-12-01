@@ -40,24 +40,24 @@ router.get('/tasks/:id', async (req, res) => {
 
 router.patch('/tasks/:id', async (req, res) => {
   const taskId = req.params.id
-  const updates = req.body
+  const updates = Object.keys(req.body)
   const allowedUpdates = ['description', 'completed']
 
-  if (!Object.keys(updates).every((u) => allowedUpdates.includes(u))) {
+  if (!updates.every((u) => allowedUpdates.includes(u))) {
     res.status(400).send({error: `Invalid param, can only update: ${allowedUpdates.join(', ')}`})
     return
   }
 
   try {
-    const task = await Task.findByIdAndUpdate(taskId, updates, {
-      new: true,
-      runValidators: true,
-    })
-
+    const task = await Task.findById(taskId)
     if (!task) {
       res.status(404).send()
       return
     }
+
+    updates.forEach((update) => task[update] = req.body[update])
+    await task.save()
+
     res.send(task)
   } catch (err) {
     res.status(400).send(err)
