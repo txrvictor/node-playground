@@ -65,9 +65,13 @@ userSchema.virtual('tasks', {
   foreignField: 'owner', // (similar to "foreigner key" on User)
 })
 
-// setup instances of User methods (user.generateAuthToken)
+// -- setup instances of User methods:
+
+// save user's jwt tokens for authentication
 userSchema.methods.generateAuthToken = async function() {
   const user = this
+
+  // TODO add expiration
   const token = jwt.sign({_id: user._id.toString()}, JWT_SECRET)
 
   user.tokens = user.tokens.concat({token})
@@ -78,8 +82,8 @@ userSchema.methods.generateAuthToken = async function() {
   return token
 }
 
-// override method so when it's parsed to JSON when sent back 
-// through the API response, we can ommit some infomation
+// override method so the parsed JSON when sent back 
+// through the API response can ommit some infomation
 userSchema.methods.toJSON = function() {
   const user = this
   const obj = user.toObject()
@@ -90,7 +94,8 @@ userSchema.methods.toJSON = function() {
   return obj
 }
 
-// setup static model methods (Users.findByCredentials)
+// -- setup static model methods:
+
 userSchema.statics.findByCredentials = async (email, password) => {
   const user = await User.findOne({email})
   const loginError = new Error('Unable to login')
