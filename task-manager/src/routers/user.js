@@ -94,7 +94,7 @@ router.delete('/users/me', auth, async (req, res) => {
   try {
     await user.remove()
 
-    // send back delete user
+    // send back deleted user
     res.send(user)
   } catch (err) {
     res.status(500).send(err)

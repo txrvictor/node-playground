@@ -3,6 +3,8 @@ const validator = require('validator')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 
+const Task = require('./task')
+
 const HASH_SALT = 8
 
 // just for practice, shouldn't be in the code but in some .env var
@@ -105,8 +107,10 @@ userSchema.statics.findByCredentials = async (email, password) => {
   return user
 }
 
-// add middleware "pre" (before) events 
-// do not use arrow functions because we need the binding
+// -- middleware "pre" (before) events:
+// (do not use arrow functions because we need the binding)
+
+// hash password when saving user
 userSchema.pre('save', async function(next) {
   // "this" refers to the document (user) which we will "save"
   const user = this
@@ -118,6 +122,15 @@ userSchema.pre('save', async function(next) {
   }
 
   // call next to indicate we're done with this pre-processing
+  next()
+})
+
+// cascade delete user's tasks when user is deleted
+userSchema.pre('remove', async function(next) {
+  const user = this
+
+  await Task.deleteMany({owner: user._id})
+
   next()
 })
 
