@@ -5,10 +5,8 @@ const jwt = require('jsonwebtoken')
 
 const Task = require('./task')
 
-const HASH_SALT = 8
-
-// just for practice, shouldn't be in the code but in some .env var
-const JWT_SECRET = 'somesecretthatshouldbeinenv'
+const HASH_SALT = +process.env.HASH_SALT || 8
+const JWT_SECRET = process.env.JWT_SECRET
 
 const userSchema = new mongoose.Schema({
   name: {
