@@ -101,3 +101,31 @@ test('Should not delete account unauthenticated user', async () => {
     .send()
     .expect(401)
 })
+
+test('Should upload avatar image', async () => {
+  await request(app).post('/users/me/avatar')
+    .set('Authorization', `Bearer ${testUser.tokens[0].token}`)
+    .attach('avatar', 'tests/fixtures/profile-pic.jpg')
+    expect(200)
+
+  // make sure there was some buffer uploaded to avatar
+  const user = await User.findById(testUserId)
+  expect(user.avatar).toEqual(expect.any(Buffer))
+})
+
+test('Should update valid user fields', async () => {
+  await request(app).patch('/users/me')
+    .set('Authorization', `Bearer ${testUser.tokens[0].token}`)
+    .send({name: 'Inigo Montoya'})
+    .expect(200)
+
+  const user = await User.findById(testUserId)
+  expect(user.name).toBe('Inigo Montoya')
+})
+
+test('Should not update invalid user fields', async () => {
+  await request(app).patch('/users/me')
+    .set('Authorization', `Bearer ${testUser.tokens[0].token}`)
+    .send({phone: '123456'})
+    .expect(400)
+})
