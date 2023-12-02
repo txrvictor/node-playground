@@ -1,26 +1,9 @@
 const request = require('supertest')
-const jwt = require('jsonwebtoken')
-const mongoose = require('mongoose')
 const app = require('../src/app')
-
 const User = require('../src/models/user')
+const {testUserId, testUser, setupDatabase} = require('./fixtures/db')
 
-const testUserId = new mongoose.Types.ObjectId()
-const testUser = {
-  _id: testUserId,
-  name: 'John',
-  email: 'john@email.com',
-  password: 'SecreTpasS!',
-  tokens: [{
-    token: jwt.sign({_id: testUserId}, process.env.JWT_SECRET),
-  }]
-}
-
-// clean up before each test and setup an user
-beforeEach(async () => {
-  await User.deleteMany()
-  await new User(testUser).save()
-})
+beforeEach(setupDatabase)
 
 test('Should signup a new user', async () => {
   const response = await request(app).post('/users').send({
@@ -106,7 +89,7 @@ test('Should upload avatar image', async () => {
   await request(app).post('/users/me/avatar')
     .set('Authorization', `Bearer ${testUser.tokens[0].token}`)
     .attach('avatar', 'tests/fixtures/profile-pic.jpg')
-    expect(200)
+    .expect(200)
 
   // make sure there was some buffer uploaded to avatar
   const user = await User.findById(testUserId)
