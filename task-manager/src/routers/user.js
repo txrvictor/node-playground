@@ -1,5 +1,6 @@
 const express = require('express')
 const multer = require('multer')
+const sharp = require('sharp')
 const User = require('../models/user')
 const auth = require('../middleware/auth')
 const router = new express.Router()
@@ -37,7 +38,9 @@ router.get('/users/:id/avatar', async (req, res) => {
       throw new Error()
     }
 
-    res.set('Content-Type', 'image/jpg')
+    // sharp lib convert all saved image to png
+    res.set('Content-Type', 'image/png')
+
     res.send(user.avatar)
   } catch (err) {
     res.status(400).send()
@@ -136,8 +139,14 @@ const multerErrorHandler = (error, req, res, next) => {
 router.post('/users/me/avatar', auth, upload.single('avatar'), async (req, res) => {
   // multer pass this down if "dest" was not given as config option to multer()
   const imgBuffer = req.file.buffer
+
+  // use sharp lib to optimize image
+  const buffer = await sharp(imgBuffer)
+    .resize({width: 250, height: 250}) // set a standard size
+    .png() // convert to png any type of img
+    .toBuffer()
   
-  req.user.avatar = imgBuffer
+  req.user.avatar = buffer
   await req.user.save()
 
   res.send()
