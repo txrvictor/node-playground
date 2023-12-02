@@ -21,19 +21,32 @@ router.post('/tasks', auth, async (req, res) => {
 
 router.get('/tasks', auth, async (req, res) => {
   const match = {}
+  const sort = {}
+  
+  const {completed, limit, skip, sortBy} = req.query
 
   // 'completed' comes as a string ('true' or 'false')
-  if (req.params.completed) {
-    match.completed = req.params.completed === 'true'
+  if (completed) {
+    match.completed = completed === 'true'
+  }
+
+  // expects the format: "sortBy=createdAt:desc"
+  if (sortBy) {
+    const parts = sortBy.split(':')
+    sort[parts[0]] = parts[1] === 'desc' ? -1 : 1
   }
 
   try {
     // "populate()" was setup in User model as a "virtual" relation
     // and populates the tasks for a given user (using uder's _id)
-    // "match" include additional conditions to look for the tasks
     await req.user.populate({
       path: 'tasks',
-      match,
+      match, // include additional conditions to look for the tasks
+      options: {
+        limit: parseInt(limit), // if not given will be ignored
+        skip: parseInt(skip),
+        sort,
+      },
     }).execPopulate()
 
     res.send(req.user.tasks)
