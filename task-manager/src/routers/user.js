@@ -1,4 +1,5 @@
 const express = require('express')
+const multer = require('multer')
 const User = require('../models/user')
 const auth = require('../middleware/auth')
 const router = new express.Router()
@@ -96,6 +97,46 @@ router.delete('/users/me', auth, async (req, res) => {
 
     // send back deleted user
     res.send(user)
+  } catch (err) {
+    res.status(500).send(err)
+  }
+})
+
+const upload = multer({
+  limits: {
+    fileSize: 1000000, // 1 Mb
+  },
+  fileFilter(_, file, callback) {
+    const regex = /\.(jpg|jpeg|png)$/
+    if (!file.originalname.match(regex)) {
+      return callback(new Error('Please upload an image'))
+    }
+
+    // success
+    callback(undefined, true)
+  }
+})
+const multerErrorHandler = (error, req, res, next) => {
+  res.status(400).send({error: error.message})
+}
+router.post('/users/me/avatar', auth, upload.single('avatar'), async (req, res) => {
+  // multer pass this down if "dest" was not given as config option to multer()
+  const imgBuffer = req.file.buffer
+  
+  req.user.avatar = imgBuffer
+  await req.user.save()
+
+  res.send()
+}, multerErrorHandler)
+
+router.delete('/users/me/avatar', auth, async (req, res) => {
+  const user = req.user
+
+  try {
+    user.avatar = undefined
+    await user.save()
+
+    res.send()
   } catch (err) {
     res.status(500).send(err)
   }

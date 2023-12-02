@@ -48,6 +48,9 @@ const userSchema = new mongoose.Schema({
       }
     },
   },
+  avatar: {
+    type: Buffer, // for images
+  },
   // track user jwt tokens
   tokens: [{
     token: {
