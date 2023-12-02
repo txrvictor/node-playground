@@ -55,6 +55,14 @@ const userSchema = new mongoose.Schema({
   }],
 })
 
+// set up a virtual property to setup the relationship 
+// between user and task
+userSchema.virtual('tasks', {
+  ref: 'Task',
+  localField: '_id', // (similar to "primary key")
+  foreignField: 'owner', // (similar to "foreigner key" on User)
+})
+
 // setup instances of User methods (user.generateAuthToken)
 userSchema.methods.generateAuthToken = async function() {
   const user = this
