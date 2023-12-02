@@ -20,17 +20,23 @@ router.post('/tasks', auth, async (req, res) => {
 })
 
 router.get('/tasks', auth, async (req, res) => {
-  const currentUserId = req.user._id
+  const match = {}
+
+  // 'completed' comes as a string ('true' or 'false')
+  if (req.params.completed) {
+    match.completed = req.params.completed === 'true'
+  }
 
   try {
-    await req.user.populate('tasks').execPopulate()
+    // "populate()" was setup in User model as a "virtual" relation
+    // and populates the tasks for a given user (using uder's _id)
+    // "match" include additional conditions to look for the tasks
+    await req.user.populate({
+      path: 'tasks',
+      match,
+    }).execPopulate()
+
     res.send(req.user.tasks)
-    
-    // alternatively:
-    // const tasks = await Task.find({
-    //   owner: currentUserId,
-    // })
-    // res.send(tasks)
   } catch (err) {
     res.status(500).send(err)
   }

@@ -55,10 +55,13 @@ const userSchema = new mongoose.Schema({
       required: true,
     }
   }],
+}, {
+  timestamps: true, // adds createdAt and updatedAt fields
 })
 
-// set up a virtual property to setup the relationship 
-// between user and task
+// set a virtual property to setup the relationship 
+// between user and task allowing us to use: 
+// "user.populate('tasks').execPopulate()"
 userSchema.virtual('tasks', {
   ref: 'Task',
   localField: '_id', // (similar to "primary key")
