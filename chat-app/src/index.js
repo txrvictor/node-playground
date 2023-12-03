@@ -9,6 +9,7 @@ const {addUser, getUsersInRoom, getUser, removeUser} = require('./utils/users')
 
 const PORT = process.env.PORT || 3000
 
+const systemName = 'Chat App'
 const publicDirPath = path.join(__dirname, '../public')
 
 const app = express()
@@ -38,35 +39,41 @@ io.on('connection', (socket) => {
     // messages only to other sockets in the same room
     socket.join(user.room)
 
-    socket.emit('message', generateMessage('Greetings :)'))
-    socket.broadcast.to(user.room).emit('message', generateMessage(`${user.username} has joined the chat!`))
+    socket.emit('message', generateMessage(systemName, 'Greetings :)'))
+    socket.broadcast.to(user.room).emit(
+      'message',
+      generateMessage(systemName, `${user.username} has joined the chat!`),
+    )
 
     checkAndExec(ackCallback)
   })
 
   socket.on('sendMessage', (message, ackCallback) => {
+    const user = getUser(socket.id)
+    
     const filter = new Filter()
-
     if (filter.isProfane(message)) {
       return checkAndExec(ackCallback, 'Profanity not allowed!')
     }
 
-    // send it to all clients
-    io.emit('message', generateMessage(message))
-    
-    // acknowledge callback
+    io.to(user.room).emit('message', generateMessage(user.username, message))
     checkAndExec(ackCallback)
   })
 
   socket.on('sendLocation', (location, ackCallback) => {
-    io.emit('locationMessage', generateLocationMessage(location))
+    const user = getUser(socket.id)
+
+    io.to(user.room).emit('locationMessage', generateLocationMessage(user.username, location))
     checkAndExec(ackCallback)
   })
 
   socket.on('disconnect', () => {
     const user = removeUser(socket.id)
     if (user) {
-      io.to(user.room).emit('message', generateMessage(`${user.username} left the chat.`))
+      io.to(user.room).emit(
+        'message',
+        generateMessage(systemName, `${user.username} left the chat.`),
+      )
     }
   })
 })

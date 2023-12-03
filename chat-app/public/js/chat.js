@@ -17,6 +17,7 @@ const socket = io()
 
 socket.on('message', (message) => {
   const html = Mustache.render(messageTemplate, {
+    username: message.username,
     message: message.text,
     // moment is available because we imported the CDN script
     createdAt: moment(message.createdAt).format('h:mm a'),
@@ -26,6 +27,7 @@ socket.on('message', (message) => {
 
 socket.on('locationMessage', (message) => {
   const html = Mustache.render(locationMessageTemplate, {
+    username: message.username,
     url: message.url,
     createdAt: moment(message.createdAt).format('h:mm a'),
   })
