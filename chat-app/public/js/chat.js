@@ -14,6 +14,11 @@ const sidebarTemplate = document.querySelector('#sidebar-template').innerHTML
 // options (Qs comes from the loaded CDN lib)
 const {username, room} = Qs.parse(location.search, {ignoreQueryPrefix: true})
 
+const autoScroll = () => {
+  const $newestMessage = $messages.lastElementChild
+  $newestMessage.scrollIntoView(true)
+}
+
 // 'io' is available because we loaded 'socket.io.js' previously
 const socket = io()
 
@@ -25,6 +30,7 @@ socket.on('message', (message) => {
     createdAt: moment(message.createdAt).format('h:mm a'),
   })
   $messages.insertAdjacentHTML('beforeend', html)
+  autoScroll()
 })
 
 socket.on('locationMessage', (message) => {
@@ -34,6 +40,7 @@ socket.on('locationMessage', (message) => {
     createdAt: moment(message.createdAt).format('h:mm a'),
   })
   $messages.insertAdjacentHTML('beforeend', html)
+  autoScroll()
 })
 
 socket.on('roomData', ({room, users}) => {
