@@ -25,6 +25,13 @@ const io = socketio(server)
 
 app.use(express.static(publicDirPath))
 
+const updateRoomData = (room) => {
+  const users = getUsersInRoom(room)
+
+  // update people in the chat room
+  io.to(room).emit('roomData', {room, users})
+}
+
 io.on('connection', (socket) => {
   console.log('New websocket connection!')
 
@@ -44,6 +51,9 @@ io.on('connection', (socket) => {
       'message',
       generateMessage(systemName, `${user.username} has joined the chat!`),
     )
+
+    // update people in the chat room
+    updateRoomData(user.room)
 
     checkAndExec(ackCallback)
   })
@@ -74,6 +84,9 @@ io.on('connection', (socket) => {
         'message',
         generateMessage(systemName, `${user.username} left the chat.`),
       )
+
+      // update people in the chat room
+      updateRoomData(user.room)
     }
   })
 })

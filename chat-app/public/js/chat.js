@@ -1,4 +1,5 @@
 // elements
+const $sidebar = document.querySelector('#sidebar')
 const $messages = document.querySelector('#messages')
 const $messageForm = document.querySelector('#message-form')
 const $messageFormInput = $messageForm.querySelector('input')
@@ -8,6 +9,7 @@ const $shareLocationButton = document.querySelector('#share-location')
 // templates
 const messageTemplate = document.querySelector('#message-template').innerHTML
 const locationMessageTemplate = document.querySelector('#location-message-template').innerHTML
+const sidebarTemplate = document.querySelector('#sidebar-template').innerHTML
 
 // options (Qs comes from the loaded CDN lib)
 const {username, room} = Qs.parse(location.search, {ignoreQueryPrefix: true})
@@ -32,6 +34,11 @@ socket.on('locationMessage', (message) => {
     createdAt: moment(message.createdAt).format('h:mm a'),
   })
   $messages.insertAdjacentHTML('beforeend', html)
+})
+
+socket.on('roomData', ({room, users}) => {
+  const html = Mustache.render(sidebarTemplate, {room, users})
+  $sidebar.innerHTML = html
 })
 
 $messageForm.addEventListener('submit', (evt) => {
